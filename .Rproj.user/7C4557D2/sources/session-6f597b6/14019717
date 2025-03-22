@@ -1,0 +1,32 @@
+{
+    "id": "14019717",
+    "path": "~/Documents/Classes/MAT 427/job_app_analysis/05-job-app.qmd",
+    "project_path": "05-job-app.qmd",
+    "type": "quarto_markdown",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1742597379140.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "rmdVisualMode": "true",
+        "rmdVisualWrapConfigured": "true",
+        "source_window_id": "",
+        "Source": "Source",
+        "docOutlineVisible": "1",
+        "rmdVisualCollapsedChunks": "",
+        "rmdVisualModeLocation": "8358:6469",
+        "cursorPosition": "266,0",
+        "scrollLine": "0",
+        "last_setup_crc32": "6f597b68afb8cff"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1742618062,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1742618062427,
+    "read_only": false,
+    "read_only_alternatives": []
+}

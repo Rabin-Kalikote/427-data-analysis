@@ -1,0 +1,5 @@
+"0","notes <- read_csv(""notes_export.csv"")"
+"2","Warning: [38;5;232mOne or more parsing issues, call `problems()` on your data frame for details, e.g.:
+  dat <- vroom(...)
+  problems(dat)[39m"
+"0","head(notes)"

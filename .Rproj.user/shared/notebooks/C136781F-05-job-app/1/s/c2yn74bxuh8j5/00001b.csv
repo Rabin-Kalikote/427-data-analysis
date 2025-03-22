@@ -1,0 +1,163 @@
+"0",""
+"0","notes_folds <- vfold_cv(notes_train, v = 5, repeats = 5)"
+"0","notes_metrics <- metric_set(rmse, rsq)"
+"0",""
+"0","all_fits <- all_models |> "
+"0","  workflow_map(""fit_resamples"","
+"0","               resamples = notes_folds,"
+"0","               metrics = notes_metrics)"
+"2","→ [33m[1mA[22m[39m | [33mwarning[39m: prediction from rank-deficient fit; consider predict(., rankdeficient=""NA"")
+"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x4"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x5"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x6"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x7"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x8"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x9"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x10"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x11"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x12"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x13"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x14"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x15"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x16"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x17"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x18"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x19"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x20"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x21"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x22"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x23"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x24"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x25"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x25"
+"2","
+"
+"2","→ [33m[1mA[22m[39m | [33mwarning[39m: prediction from rank-deficient fit; consider predict(., rankdeficient=""NA"")
+"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x4"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x5"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x7"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x8"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x10"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x11"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x13"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x14"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x16"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x17"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x18"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x20"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x22"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x23"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x24"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x25"
+"2","
+"
+"2","→ [33m[1mA[22m[39m | [33mwarning[39m: prediction from rank-deficient fit; consider predict(., rankdeficient=""NA"")
+"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x6"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x9"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x11"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x14"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x16"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x19"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x21"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x24"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x25"
+"2","
+"
+"2","→ [33m[1mA[22m[39m | [33mwarning[39m: the standard deviation is zero, [38;5;232mThe correlation matrix has missing values. 3 columns were excluded from the filter.[39m
+"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1"
+"2","                                                 "
+"2","→ [33m[1mB[22m[39m | [33mwarning[39m: the standard deviation is zero, [38;5;232mThe correlation matrix has missing values. 4 columns were excluded from the filter.[39m
+"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x1"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x2"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x4"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x5"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x7"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x7"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x8"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x10"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x11"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x12"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x14"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x15"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x17"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x18"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x19"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x19"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x20"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x22"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x22"
+"2","
+"
+"2","→ [33m[1mA[22m[39m | [33mwarning[39m: the standard deviation is zero, [38;5;232mThe correlation matrix has missing values. 3 columns were excluded from the filter.[39m
+"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1"
+"2","                                                 "
+"2","→ [33m[1mB[22m[39m | [33mwarning[39m: the standard deviation is zero, [38;5;232mThe correlation matrix has missing values. 4 columns were excluded from the filter.[39m
+"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x2"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x3"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x4"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x5"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x7"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x7"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x8"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x10"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x11"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x12"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x14"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x15"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x16"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x18"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x19"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x19"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x21"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x22"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x22"
+"2","
+"
+"2","→ [33m[1mA[22m[39m | [33mwarning[39m: the standard deviation is zero, [38;5;232mThe correlation matrix has missing values. 3 columns were excluded from the filter.[39m
+"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1"
+"2","                                                 "
+"2","→ [33m[1mB[22m[39m | [33mwarning[39m: the standard deviation is zero, [38;5;232mThe correlation matrix has missing values. 4 columns were excluded from the filter.[39m
+"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x1"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x2"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x3"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x4"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x6"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x1   [1m[33mB[39m[22m: x7"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x7"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x8"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x9"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x10"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x12"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x13"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x14"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x15"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x17"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x2   [1m[33mB[39m[22m: x18"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x19"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x20"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x21"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x22"
+"2","There were issues with some computations   [1m[33mA[39m[22m: x3   [1m[33mB[39m[22m: x22"
+"2","
+"
+"0","autoplot(all_fits,  metric = ""rsq"") + "
+"0","  geom_text_repel(aes(label = wflow_id))"

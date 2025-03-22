@@ -1,0 +1,620 @@
+---
+title: "Ask Mattrab Note-Views Analysis" 
+author: "Rabin Kumar Kalikote"
+editor: visual
+format:
+  html:
+    embed-resources: true
+---
+
+```{r setup, include=FALSE}
+# load packages here
+library(tidyverse)
+library(tidymodels)
+library(ISLR2)
+library(ggplot2)
+library(broom)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(forcats)
+library(knitr)
+library(ggrepel)
+library(datasets)
+library(kknn)
+
+tidymodels_prefer()
+```
+
+# Introduction
+
+## Data: Ask Mattrab Note Views
+
+The data for this analysis includes the 'Notes' table of Ask Mattrab database. The columns (reduced/modified) in the table are:
+
+-   `id`: Primary key: an unique identifier of the note.
+-   `title`: The title of the note. User reads before opening the note.
+-   `body_characters_count`: The number of characters that the content of the note has. Didn't include content because I can't risk leaking the note's content and it's not statistically significant for this analysis.
+-   `created_at`: Date when note was created.
+-   `updated_at`: Date when note was last modified.
+-   `user_id` : User id (foreign key) of the creator of note.
+-   `image_file_name`: Thumbnail name.
+-   `image_content_type`: Thumbnail type.
+-   `image_file_size`: Thumbnail size.
+-   `image_updated_at`: Date when the thumbnail was last updated.
+-   `view`: Total count that the note was opened and read.
+-   `is_verified`: Boolean if the note is verified to be published or not.
+-   `status`: If the note is draft or published.
+-   `grade_id`: Grade id (foreign key) denoting which grade the note belong to.
+-   `subject_id`: Subject id (foreign key) denoting which subject the note belong to.
+-   `chapter_id`: Chapter id (foreign key) denoting which chapter the note belong to.
+-   `position`: If the note is visible in the Ask Mattrab library or not.
+
+Processing 2,083 records, my ultimate goal is to predict `view` from the other features.
+
+# Loading & Cleaning the Data
+
+::: {.callout-tip title="Question"}
+The data are contained in `notes_export.csv`. Load the data.
+
+```{r, message=FALSE}
+notes <- read_csv("notes_export.csv")
+head(notes)
+summary(notes)
+```
+:::
+
+## Exercise 2
+
+:::: {.callout-tip title="Question"}
+Two of the variables in the data set shouldn't be useful because they just serve to identify the different LEGO sets. Which two are they? Remove them.
+
+::: {.callout-note title="Answer"}
+***I think item number, and set name could be removed as, item number is just a unique identifier for each set, and set name is just the name of the set is not useful for numerical prediction models. So they do not contribute to predicting the price.***
+:::
+
+```{r}
+# so here we are pointing out the 2 columns, 
+# - sign removes them techincally
+# then save it under same data frame name
+lego <- lego %>% select(-Item_Number, -Set_Name)
+
+# kinda wanna check the columns again
+str(lego)
+```
+::::
+
+## Exercise 3
+
+::: {.callout-tip title="Question"}
+Notice that the `Weight` variable is a bit odd... It seems like it should be numeric but it's a `chr`. Why? Write code to extract the true numerical weight in either lbs or Kgs (your choice). You are encouraged to use the internet and generative AI to help you figure out how to do this. However, make sure you are able to explain your code once you are done.
+
+```{r}
+# I actually did not even notice that the weight variable is odd, 
+# I would look at it again
+unique(lego$Weight)
+```
+:::
+
+::: {.callout-note title="Explanation"}
+*Weight variable is stored as a character, as in chr, and I can see that it includes units too. So I think, we need to extract the **numeric values** and maybe convert everything into a consistent unit like kilograms.*
+:::
+
+```{r}
+# I had to get from AI for the str_extract/detect functions, I did not know it
+# it felt like a regex notation honestly
+lego <- lego %>%
+  mutate(Kg_Weight = as.numeric(str_extract(Weight, "\\d+\\.\\d+")))
+```
+
+::: {.callout-note title="Code Explanation"}
+I think `str_extract(Weight, "\\d+\\.\\d+")` is taking every value in the **weight** column and extracting only the first decimal number, which should be either in kg or lbs. It's like now we avoid grabbing multiple numbers when both kg and lb exist in the same string. Then, `as.numeric()` converts that extracted number into a numeric format.
+
+I assume the next line is just an **if-else condition**. Inside it, it checks if `"lb"` appears in the `Weight` column using `str_detect()`, and if **TRUE**, it multiplies the extracted number **Weight_numeric** by `0.453592` to convert pounds to kilograms. If **FALSE**, it keeps the value as is (assuming it's already in kg). The final result is stored in the **Weight_kg** column, like in a new column.
+:::
+
+```{r}
+# now let's see these columns again
+head(lego)
+unique(lego$Kg_Weight)
+```
+
+## Exercise 4
+
+::: {.callout-tip title="Question"}
+For each of the 12 features do the following:
+:::
+
+### Exercise 4.1
+
+::: {.callout-tip title="Question"}
+Identify if they are the correct data type. Are categorical variables coded as factors? Are the factor levels in the correct order if necessary? Are numerical variables coded as numbers? You will need to read descriptions of the data to make this determination.
+
+```{r}
+# let's see how it looks before hand
+str(lego)
+```
+
+```{r}
+# honestly, everything seems to be good, and they correspond well 
+# with the description
+# just to be sure I would order the levels for categorical variables
+lego <- lego %>%
+  mutate(
+    Theme = as.factor(Theme),
+    Year = as.integer(Year),
+    Ages = factor(Ages, 
+                    levels = c("Ages_2+", "Ages_5+", "Ages_6+", "Ages_7+", 
+                               "Ages_8+", "Ages_9+", "Ages_10+", "Ages_12+", 
+                               "Ages_14+", "Ages_16+", "Ages_18+"),
+                    ordered = TRUE),
+    Pages = as.integer(Pages),
+    Minifigures = as.integer(Minifigures),
+    Packaging = as.factor(Packaging),
+    Availability = as.factor(Availability),
+    Size = factor(Size, levels = c("Small", "Large")),
+    Weight = as.factor(Weight)
+    
+    # I mean Kg weight variable ofc has to be in numeric already
+  )
+```
+:::
+
+### Exercise 4.2
+
+::: {.callout-tip title="Question"}
+Identify any variables with missing values. Identify and then fix any variables for whom missing values (i.e. `NA`s) indicate something other than that the data is missing (there is at least one). Fill in this missing values appropriately.
+
+```{r}
+# I wanna see how many missing values we have 
+colSums(is.na(lego))  
+```
+:::
+
+::: {.callout-important title="Realization"}
+**What??? there is so many NAs in weight, Kg weight (makes sense they are dependent), and in Ages. Honestly, I hate dropping values, cuz it lowers the amount of data points we have. So I would not personally like doing that, I am gonna find a way to maybe add zero's or average value in places where it is suitable.**
+
+**Technically we can NAs in numerical variables like mini-figures, pages can be considered zero. But for weight I would prefer to have average weight when there is a NA.**
+:::
+
+```{r}
+# okay I picked mini figures, kg weight, and pages
+lego <- lego %>%
+  mutate(Minifigures = ifelse(is.na(Minifigures), 0, Minifigures), 
+         Kg_Weight = ifelse(is.na(Kg_Weight), mean(Kg_Weight, na.rm = TRUE), Kg_Weight), 
+         Pages = ifelse(is.na(Pages), median(Pages, na.rm = TRUE), Pages),
+  )
+```
+
+::: {.callout-note title="Code Explanation"}
+For three numerical variables like mini figures, kg weight, and pages, we are just using an `ifelse()` condition and check for `is.na()` NA values, then **replace them with either a 0 or the average value** and save it under same variable column name**.** `na.rm = TRUE` should be avoiding NA values when calculating mean.
+:::
+
+```{r}
+# why don't we check again
+colSums(is.na(lego))  
+```
+
+### LOOKS MUCH BETTER HONESTLY
+
+### Exercise 4.3
+
+::: {.callout-tip title="Question"}
+For all of the categorical variables, identify ones that you think may be problematic because they may have near-zero variance. Decide whether to remove them now, or remove them as part of your pre-processor. Make an argument for why your choice is appropriate.
+
+```{r}
+# okay I nedd to first pick out the categorical varaibles first
+cat_vars <- c("Theme", "Ages", "Packaging", "Availability", "Size")
+
+# I kept getting errors when I tried to make a plot to show variance
+# so I ended up making variance table for each varible 
+for (var in cat_vars) {
+  print(var)
+  print(table(lego[[var]]))
+}
+```
+:::
+
+::: {.callout-note title="Argument"}
+So it seems like **packaging, and availability** has so less relative variance. As in packaging, box has 365 data, out of total 400, which is like **91%** of all data also in availability, retail has 354 data, and that is like almost **89%** of all data.
+
+**Removing near-zero variance variables helps models learn better, and techincally if a feature has no meaningful variation, it won't contribute to predictions.**
+:::
+
+```{r}
+# remove them with -any_of()
+lego <- lego %>% select(-any_of(c("Packaging", "Availability")))
+
+# let's check again
+str(lego)
+```
+
+### Exercise 4.4
+
+:::: {.callout-tip title="Question"}
+For all of the categorical variables, identify ones that you think may be problematic because they have many categories that don't have a lot of observations and likely need to be "lumped". Decide whether to remove them now, or remove them as part of your pre-processor. Make an argument for why your choice is appropriate.
+
+::: {.callout-tip title="Argument"}
+I think my stratergy would be to look at the table I made for ex. 4.3. I noticed there's so many themes under Theme variable, but some may appear only **once or twice**. So I would keep top 10 most common themes, lump others as "Other". Too many categories can lead to over fitting, also rare categories may not provide enough data for meaningful insights, and Lumping ensures we don’t lose valuable information while simplifying the data set.
+:::
+
+```{r}
+# AI told me about this fct_lump_n() function
+lego <- lego %>%
+  mutate(Theme = fct_lump_n(Theme, n = 10)) 
+
+# let's check now
+head(lego)
+
+# I can notice there is a category called other present in themes column
+```
+::::
+
+# Data Splitting & Preprocessing
+
+## Exercise 5
+
+::: {.callout-tip title="Question"}
+Split your data into training and test sets. Use your own judgement to determine training to test split ratio. Make sure to set a seed.
+:::
+
+```{r}
+set.seed(427)
+
+lego_split <- initial_split(lego, prop = 0.65, strata = Pieces)
+
+lego_train <- training(lego_split)
+lego_test  <- testing(lego_split)
+
+lego_test
+lego_train
+
+lego_train <- lego_train |>
+  mutate(across(where(is.character), as.factor))
+```
+
+## Exercise 6
+
+::: {.callout-tip title="Question"}
+Generate at least three different recipes designed to be used with linear regression that treat preprocessing differently. Hint: you'll likely want to try out different missing value imputation or lumping strategies. It's also a good idea to include `step_lincolm`.
+:::
+
+```{r}
+
+# Simple Mean and Mode Imputation
+lm_recipe1 <- recipe(Amazon_Price ~ ., data = lego_train) |>
+  # Mean (average) imputation for numeric features
+  step_impute_mean(all_numeric_predictors()) |>
+  # Mode (most repeated) imputation for categorical features
+  step_impute_mode(all_nominal_predictors()) |>
+  # Normalize numeric predictors
+  step_normalize(all_numeric_predictors()) |>
+  step_unknown(all_nominal(), -all_outcomes()) |>
+  # Convert categorical variables to dummy variables
+  step_dummy(all_nominal_predictors())
+
+lm_recipe2 <- recipe(Amazon_Price ~ ., data = lego_train) |>
+  # Median imputation
+  step_impute_median(all_numeric_predictors()) |>
+  # Lump rare categories into "Rare"
+  step_other(all_nominal_predictors(), threshold = 0.05, other = "Rare") |>
+  step_unknown(all_nominal(), -all_outcomes()) |>
+  step_dummy(all_nominal(), -all_outcomes()) |>
+  # Remove linear combinations of variables
+  step_lincomb(all_predictors()) |>
+  step_center(all_numeric_predictors()) |>
+  # Standardize numeric variables
+  step_scale(all_numeric_predictors())
+
+# KNN Imputation
+lm_recipe3 <- recipe(Amazon_Price ~ ., data = lego_train) |>
+  step_nzv(all_predictors()) |>
+  # KNN-based imputation
+  step_impute_knn(all_numeric_predictors(), neighbors = 5) |>
+  # Mode imputation for categorical features
+  step_impute_mode(all_nominal_predictors()) |>
+  step_unknown(all_nominal(), -all_outcomes()) |>
+  # Convert categorical variables to dummy variables
+  step_dummy(all_nominal_predictors()) |>
+  # Remove collinear variables
+  step_lincomb(all_predictors()) |>
+  step_nzv(all_predictors()) |> 
+  step_normalize(all_numeric_predictors())
+
+```
+
+## Exercise 7
+
+::: {.callout-tip title="Question"}
+Generate at least three different recipes designed to be used with $K$-nearest neighbors that treat preprocessing differently. Hint: you'll likely want to try out different missing value imputation or lumping strategies.
+:::
+
+```{r}
+
+knn_recipe1 <- recipe(Amazon_Price ~ ., data = lego_train) |>
+  step_impute_knn(all_numeric_predictors(), neighbors = 5) |>
+  step_impute_mode(all_nominal_predictors()) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_unknown(all_nominal(), -all_outcomes()) |>
+  step_dummy(all_nominal_predictors())
+
+knn_recipe2 <- recipe(Amazon_Price ~ ., data = lego_train) |>
+  step_impute_median(all_numeric_predictors()) |>
+  step_other(all_nominal_predictors(), threshold = 0.05, other = "Rare") |>
+  step_scale(all_numeric_predictors()) |>
+  step_unknown(all_nominal(), -all_outcomes()) |>
+  step_dummy(all_nominal_predictors())
+
+
+knn_recipe3 <- recipe(Amazon_Price ~ ., data = lego_train) |>
+  step_nzv(all_predictors()) |>
+  step_impute_mean(all_numeric_predictors()) |>
+  step_unknown(all_nominal_predictors()) |>
+  step_other(all_nominal_predictors(), threshold = 0.01, other = "Rare") |>
+  step_dummy(all_nominal_predictors(), one_hot = TRUE) |>
+  step_corr(all_numeric_predictors(), threshold = 0.75) |>
+  step_lincomb(all_numeric_predictors()) |>
+  step_normalize(all_numeric_predictors())
+  
+
+
+```
+
+# Model-Fitting & Evaluation
+
+## Exercise 7
+
+::: {.callout-tip title="Question"}
+Create a `workflow_set` that contains 12 different workflows:
+
+-   three linear regression workflows: one linear regression model with each of the three recipes you created above
+-   nine different KNN workflows: choose three different $K$s for you KNN models and create one workflow for each combination of KNN model and preprocessing recipe
+:::
+
+```{r}
+
+lm_model <- linear_reg() |>
+  set_engine('lm')
+
+knn5_model <- nearest_neighbor(neighbors = 5) |>
+  set_engine("kknn") |>
+  set_mode("regression")
+
+knn10_model <- nearest_neighbor(neighbors = 10) |>
+  set_engine("kknn") |>
+  set_mode("regression")
+
+knn50_model <- nearest_neighbor(neighbors = 50) |>
+  set_engine("kknn") |>
+  set_mode("regression")
+
+lm_wf_recipe1 <- workflow() |> add_model(lm_model) |> add_recipe(lm_recipe1)
+lm_wf_recipe2 <- workflow() |> add_model(lm_model) |> add_recipe(lm_recipe2)
+lm_wf_recipe3 <- workflow() |> add_model(lm_model) |> add_recipe(lm_recipe3)
+
+
+knn5_wf_recipe1 <- workflow() |> add_model(knn5_model) |> add_recipe(knn_recipe1)
+knn5_wf_recipe2 <- workflow() |> add_model(knn5_model) |> add_recipe(knn_recipe2)
+knn5_wf_recipe3 <- workflow() |> add_model(knn5_model) |> add_recipe(knn_recipe3)
+
+knn10_wf_recipe1 <- workflow() |> add_model(knn10_model) |> add_recipe(knn_recipe1)
+knn10_wf_recipe2 <- workflow() |> add_model(knn10_model) |> add_recipe(knn_recipe2)
+knn10_wf_recipe3 <- workflow() |> add_model(knn10_model) |> add_recipe(knn_recipe3)
+
+knn50_wf_recipe1 <- workflow() |> add_model(knn50_model) |> add_recipe(knn_recipe1)
+knn50_wf_recipe2 <- workflow() |> add_model(knn50_model) |> add_recipe(knn_recipe2)
+knn50_wf_recipe3 <- workflow() |> add_model(knn50_model) |> add_recipe(knn_recipe3)
+```
+
+## Exercise 8
+
+::: {.callout-tip title="Question"}
+Use 5 fold CV with 5 repeats to compute the RMSE and R-squared for each of the 12 workflows you created above. Note that this step may take a few minutes to execute.
+:::
+
+```{r}
+lego_folds <- vfold_cv(lego_train, v = 5, repeats = 5)
+lego_folds
+
+lego_metrics <- metric_set(rmse, rsq)
+
+lm_recipe1_results <- lm_wf_recipe1 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+lm_recipe2_results <- lm_wf_recipe2 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+lm_recipe3_results <- lm_wf_recipe3 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+
+collect_metrics(lm_recipe1_results) |> kable()
+collect_metrics(lm_recipe2_results) |> kable()
+collect_metrics(lm_recipe3_results) |> kable()
+
+
+knn5_recipe1_results <- knn5_wf_recipe1 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+knn5_recipe2_results <- knn5_wf_recipe2 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+knn5_recipe3_results <- knn5_wf_recipe3 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+
+collect_metrics(knn5_recipe1_results) |> kable()
+collect_metrics(knn5_recipe2_results) |> kable()
+collect_metrics(knn5_recipe3_results) |> kable()
+
+knn10_recipe1_results <- knn10_wf_recipe1 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+knn10_recipe2_results <- knn10_wf_recipe2 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+knn10_recipe3_results <- knn10_wf_recipe3 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+
+collect_metrics(knn10_recipe1_results) |> kable()
+collect_metrics(knn10_recipe2_results) |> kable()
+collect_metrics(knn10_recipe3_results) |> kable()
+
+knn50_recipe1_results <- knn50_wf_recipe1 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+knn50_recipe2_results <- knn50_wf_recipe2 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+knn50_recipe3_results <- knn50_wf_recipe3 |> fit_resamples(resamples = lego_folds, metrics = lego_metrics)
+
+collect_metrics(knn50_recipe1_results) |> kable()
+collect_metrics(knn50_recipe2_results) |> kable()
+collect_metrics(knn50_recipe3_results) |> kable()
+```
+
+lm_recipe2_results has least RMSE.
+
+## Exercise 9
+
+::: {.callout-tip title="Question"}
+Plot the results of your cross validation and select your best workflow.
+
+From the below the graph we can see that lm_knn_impute_lm_model has the highest value and is close to one so we can say that it is the best workflow.
+:::
+
+```{r}
+
+knn_models <- list(
+  knn5 = knn5_model,
+  knn10 = knn10_model,
+  knn50 = knn50_model
+)
+
+lm_models <- list(
+  lm_model = lm_model
+)
+
+lm_preprocessors <- list(
+  lm_knn_impute = lm_recipe3,
+  lm_mean_impute = lm_recipe1,
+  lm_median_imput = lm_recipe2
+)
+
+knn_preprocessors <- list(
+  knn_knn_impute = knn_recipe1,
+  knn_mean_impute = knn_recipe3,
+  knn_median_imput = knn_recipe2
+)
+
+knn_models <- workflow_set(knn_preprocessors, knn_models, cross = TRUE)
+lm_models <-  workflow_set(lm_preprocessors, lm_models, cross = TRUE)
+
+all_models <- lm_models |> 
+  bind_rows(knn_models)
+  
+all_models
+
+all_fits <- all_models |> 
+  workflow_map("fit_resamples",
+               resamples = lego_folds,
+               metrics = lego_metrics)
+
+autoplot(all_fits,  metric = "rsq") + 
+  geom_text_repel(aes(label = wflow_id))
+
+autoplot(all_fits,  metric = "rmse") + 
+  geom_text_repel(aes(label = wflow_id))
+
+# autoplot(all_fits, metric = "rmse") +
+#   geom_text_repel(aes(label = wflow_id), nudge_x = 1/8, nudge_y = 1/100) +
+#   theme(legend.position = "none")
+```
+
+## Exercise 10
+
+::: {.callout-tip title="Question"}
+Re-fit your best model on the whole training set and estimate your error metrics on the test set.
+:::
+
+```{r}
+best_workflow <- workflow() |>
+  add_recipe(lm_recipe3) |>
+  add_model(lm_model)
+
+best_fit <- best_workflow |>
+  fit(data = lego_train)
+
+best_fit
+
+predictions <- predict(best_fit, new_data = lego_test)
+
+results <- lego_test |>
+  bind_cols(predictions)
+
+metrics <- metric_set(rmse, rsq)
+error_metrics <- results |>
+  metrics(truth = Amazon_Price, estimate = .pred)
+
+error_metrics
+```
+
+# Conceptual Question
+
+## Exercise 11 (Sample interview question)
+
+::: {.callout-tip title="Question"}
+The time to complete cross-validation can be substantially improved by using parallel processing. Below is the output for the copilot prompt "Generate pseudo-code in R to do cross-validation with repetition and multiple models". Which parts of this code can be run in parallel and which can't. Note any changes that you might need to make for this to be parallelizable.
+
+The part of code that can run parallel are:
+
+a\) Innermost loop: for (i in 1:k) Every iteration of this loop trains and evaluates the model on a distinct fold of the dataset
+
+b\) Loop through each repetition: for (rep in 1:r) Here each iteration of cross validation entails contructing fresh k fold and evaluating the model independently
+
+c\) Loop through each model: for (model_name in names(models)) Here also each model in the list can be evaluated independently of the otbher
+
+```{r}
+#| eval: FALSE
+
+# Define the number of folds (k) and the number of repetitions (r)
+k <- 5
+r <- 3
+
+# Define the list of models to evaluate
+models <- list(
+    model1 = train_model1,
+    model2 = train_model2,
+    model3 = train_model3
+)
+
+# Initialize a list to store the performance metrics for each model
+all_performance_metrics <- list()
+
+# Loop through each model
+for (model_name in names(models)) {
+    # Initialize a list to store the performance metrics for this model
+    model_performance_metrics <- list()
+    
+    # Loop through each repetition
+    for (rep in 1:r) {
+        # Create k-fold cross-validation indices for this repetition
+        folds <- createFolds(dataset$target_variable, k = k)
+        
+        # Initialize a list to store the performance metrics for this repetition
+        performance_metrics <- list()
+        
+        # Loop through each fold
+        for (i in 1:k) {
+            # Use the i-th fold as the validation set
+            validation_indices <- folds[[i]]
+            validation_set <- dataset[validation_indices, ]
+            
+            # Use the remaining folds as the training set
+            training_set <- dataset[-validation_indices, ]
+            
+            # Train the model on the training set
+            model <- models[[model_name]](training_set)
+            
+            # Evaluate the model on the validation set
+            performance <- evaluate_model(model, validation_set)
+            
+            # Store the performance metric
+            performance_metrics[[i]] <- performance
+        }
+        
+        # Store the performance metrics for this repetition
+        model_performance_metrics[[rep]] <- performance_metrics
+    }
+    
+    # Store the performance metrics for this model
+    all_performance_metrics[[model_name]] <- model_performance_metrics
+}
+
+# Calculate the average performance metric for each model across all repetitions
+average_performance <- sapply(all_performance_metrics, function(metrics) mean(unlist(metrics)))
+
+# Output the average performance for each model
+print("Average Performance for each model:")
+print(average_performance)
+```
+:::
