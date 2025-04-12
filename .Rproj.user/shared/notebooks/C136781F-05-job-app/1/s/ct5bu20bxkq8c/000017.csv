@@ -1,8 +1,0 @@
-"0","set.seed(427)"
-"0",""
-"0","notes_split <- initial_split(notes, prop = 0.65, strata = grade_id)"
-"0",""
-"0","notes_train <- training(notes_split)"
-"0","notes_test  <- testing(notes_split)"
-"0",""
-"0","notes_test"

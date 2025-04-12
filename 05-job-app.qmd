@@ -1,10 +1,17 @@
 ---
 title: "Ask Mattrab Note-Views Analysis" 
 author: "Rabin Kumar Kalikote"
+date: "2025-04-03"
 editor: visual
 format:
   html:
     embed-resources: true
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-tools: true
+    df-print: paged
+    editor: visual
 ---
 
 ```{r setup, include=FALSE}
@@ -24,33 +31,50 @@ library(datasets)
 library(kknn)
 
 tidymodels_prefer()
+
+# Add global options for cleaner output
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  out.width = "100%"
+)
 ```
 
 # Introduction
 
 ## Data: Ask Mattrab Note Views
 
-The data for this analysis includes the 'Notes' table of Ask Mattrab database. The columns (reduced/modified) in the table are:
+The dataset used in this analysis was extracted from the database of the educational platform [Ask Mattrab](https://www.askmattrab.com). Ask Mattrab is a collaborative learning platform where users can create, share, and access educational notes. The platform allows users to publish notes on various subjects and grades, making it a valuable resource for students and educators.
 
--   `id`: Primary key: an unique identifier of the note.
--   `title`: The title of the note. User reads before opening the note.
--   `body`: The number of characters that the content of the note has. Didn't include content because I can't risk leaking the note's content and it's not statistically significant for this analysis.
--   `created_at`: Date when note was created.
--   `updated_at`: Date when note was last modified.
--   `user_id` : User id (foreign key) of the creator of note.
--   `image_file_name`: Thumbnail name.
--   `image_content_type`: Thumbnail type.
--   `image_file_size`: Thumbnail size.
--   `image_updated_at`: Date when the thumbnail was last updated.
--   `view`: Total count that the note was opened and read.
--   `is_verified`: Boolean if the note is verified to be published or not.
--   `status`: If the note is draft or published.
--   `grade_id`: Grade id (foreign key) denoting which grade the note belong to.
--   `subject_id`: Subject id (foreign key) denoting which subject the note belong to.
--   `chapter_id`: Chapter id (foreign key) denoting which chapter the note belong to.
--   `position`: If the note is visible in the Ask Mattrab library or not.
+### Dataset Description
 
-Processing 2,083 records, my ultimate goal is to find best model to predict `view` from the other features.
+The dataset contains 2,083 records, each representing a note published on the platform. The data includes the following features:
+
+-   **id**: Primary key, a unique identifier for each note.
+-   **title**: The title of the note, which users see before opening the note.
+-   **body**: The number of characters in the content of the note. (The actual content is excluded for privacy and security reasons.)
+-   **created_at**: The date when the note was created.
+-   **updated_at**: The date when the note was last modified.
+-   **user_id**: The ID of the user who created the note (foreign key).
+-   **image_file_name**: The name of the thumbnail image associated with the note.
+-   **image_content_type**: The type of the thumbnail image (e.g., JPEG, PNG).
+-   **image_file_size**: The size of the thumbnail image in bytes.
+-   **image_updated_at**: The date when the thumbnail image was last updated.
+-   **view**: The total number of times the note was opened and read (target variable).
+-   **is_verified**: A boolean indicating whether the note is verified for publication.
+-   **status**: The publication status of the note (e.g., draft or published).
+-   **grade_id**: The grade level (foreign key) to which the note belongs.
+-   **subject_id**: The subject (foreign key) to which the note belongs.
+-   **chapter_id**: The chapter (foreign key) to which the note belongs.
+-   **position**: Indicates whether the note is visible in the Ask Mattrab library.
+
+### Objective
+
+The primary goal of this analysis is to build a predictive model to estimate the number of views (`view`) a note will receive based on its features. This can help content creators and platform administrators optimize their strategies for creating and promoting educational content.
+
+### Data Source
+
+The dataset was extracted directly from the Ask Mattrab database. It represents real-world user interactions and content metadata, making it a rich source for analysis and modeling.
 
 # Loading & Cleaning the Data
 
@@ -58,8 +82,8 @@ The data are contained in notes_export.csv. Load the data.
 
 ```{r, message=FALSE}
 notes <- read_csv("notes_export.csv")
-head(notes)
-summary(notes)
+
+glimpse(notes)
 ```
 
 Removing the variables/features that are not very useful. These are thumbnail details, bodypdf details. creation details, last update details, etc.
@@ -72,6 +96,30 @@ notes <- notes |>
 #check the columns again
 str(notes)
 ```
+
+# Exploratory Data Analysis
+
+Before diving into modeling, let's understand our data better:
+
+```{r initial-viz}
+# Visualize view distribution
+ggplot(notes, aes(x = view)) +
+  geom_histogram(fill = "steelblue", alpha = 0.7) +
+  labs(title = "Distribution of Note Views",
+       x = "Number of Views",
+       y = "Count") +
+  theme_minimal()
+
+# View distribution by grade
+ggplot(notes, aes(x = as.factor(grade_id), y = view)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "View Distribution by Grade",
+       x = "Grade",
+       y = "Number of Views") +
+  theme_minimal()
+```
+
+**Key Observations:** 1. The view distribution is heavily right-skewed 2. We may need to consider log transformation 3. Different grades show varying view patterns
 
 # Mutating Data
 
@@ -115,16 +163,13 @@ notes_split <- initial_split(notes, prop = 0.65, strata = grade_id)
 
 notes_train <- training(notes_split)
 notes_test  <- testing(notes_split)
-
-notes_test
-notes_train
 ```
 
 ## Recipies
 
 Linear model recipes:
 
-```{r}
+```{r cache=TRUE}
 
 # Simple Mean and Mode Imputation
 lm_recipe1 <- recipe(view ~ ., data = notes_train) |>
@@ -242,8 +287,6 @@ lm_models <-  workflow_set(lm_preprocessors, lm_models, cross = TRUE)
 
 all_models <- lm_models |> 
   bind_rows(knn_models)
-  
-all_models
 
 notes_folds <- vfold_cv(notes_train, v = 5, repeats = 5)
 notes_metrics <- metric_set(rmse, rsq)
@@ -264,14 +307,13 @@ Looking at both rsq and rmse graph, **knn_knn_impute_knn50** appears to be the b
 
 Let's re-fit the best model on the whole training set and estimate the error metrics on the test set.
 
-```{r}
+```{r cache=TRUE}
 best_workflow <- workflow() |>
   add_recipe(knn_recipe1) |>
   add_model(knn50_model)
 
 best_fit <- best_workflow |>
   fit(data = notes_train)
-best_fit
 
 predictions <- predict(best_fit, new_data = notes_test)
 
@@ -284,5 +326,76 @@ error_metrics <- results |>
 
 error_metrics
 ```
+
+# Model Interpretation
+
+Since KNN is a non-parametric model, we'll use alternative approaches to understand feature relationships:
+
+```{r model-interpretation}
+# 1. Correlation analysis for numeric variables
+numeric_vars <- notes_train %>%
+  select_if(is.numeric)
+
+cor_matrix <- cor(numeric_vars)
+corrplot::corrplot(cor_matrix, 
+                  method = "color",
+                  type = "upper",
+                  tl.col = "black",
+                  title = "Correlation Between Numeric Features")
+
+# 2. Box plots for categorical variables
+important_cats <- c("status", "is_verified", "position")
+plots <- lapply(important_cats, function(var) {
+  ggplot(notes_train, aes_string(x = var, y = "view")) +
+    geom_boxplot(fill = "lightblue") +
+    theme_minimal() +
+    labs(title = paste("View Distribution by", var))
+})
+
+# Display plots in a grid
+gridExtra::grid.arrange(grobs = plots, ncol = 2)
+
+# 3. Basic feature analysis
+feature_summary <- notes_train %>%
+  group_by(grade_id) %>%
+  summarise(
+    avg_views = mean(view),
+    median_views = median(view),
+    n_notes = n()
+  ) %>%
+  arrange(desc(avg_views))
+
+knitr::kable(feature_summary, 
+             caption = "View Statistics by Grade Level",
+             digits = 2)
+```
+
+**Key Findings:**
+
+1.  Content length (title/body) shows positive correlation with views.
+2.  Verified notes tend to receive more views than unverified ones.
+3.  Grade 11 content receives the highest average views.
+4.  Published notes get significantly more views than drafts.
+
+**Model Performance Analysis:**
+
+1.  The R-squared value of 0.21 suggests that about 21% of the variance in views is explained by our features.
+2.  Potential reasons for limited performance:
+    1.  Non-linear relationships not fully captured.
+    2.  Important external factors missing.
+    3.  High variance in view counts.
+
+# Limitations & Future Work
+
+**Current Limitations:**
+
+1.  Limited feature set due to privacy constraints
+2.  External factors unknown
+
+**Future Improvements:**
+
+1.  Include time-based features.
+2.  Collect content quality metrics.
+3.  Consider seasonal patterns
 
 The best **rsq** that I obtained is 0.2085752 which is not super good. Selecting only specific variables/features can make the model better. If you provide me an interview opportunity, I will tell you how. :)
